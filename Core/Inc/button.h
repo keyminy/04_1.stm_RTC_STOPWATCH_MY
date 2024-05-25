@@ -18,3 +18,4 @@
 int get_button(GPIO_TypeDef  *GPIO, int button_pin, int button_num);
 void button0_check(void);
 void stop_watch_state_chk(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock);
+void min2sec_clock_state_chk(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock);

@@ -27,10 +27,14 @@ void button0_check(void)
 
 void stop_watch_state_chk(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock)
 {
-//	if(pStopwatch->state == STOPWATCH_IDLE){
+	if(
+		pMin2sec_clock->state == CLOCK_IDLE
+	){
 		switch(pStopwatch->state){
 		case STOPWATCH_IDLE:
-			if(get_button(BUTTON0_GPIO_Port, BUTTON0_Pin, BUTTON0) == BUTTON_PRESS) {
+			pStopwatch->ms_count = 0;
+			pStopwatch->sec_count = 0;
+			if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1) == BUTTON_PRESS) {
 				// go to running state
 				pStopwatch->ms_count = 0;
 				pStopwatch->sec_count = 0;
@@ -40,27 +44,61 @@ void stop_watch_state_chk(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock)
 		case STOPWATCH_RUNNING:
 			// display stopwatch
 			// Switch to Min2Sec_Clock
-//			if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1)) {
-//				pStopwatch->state = STOPWATCH_IDLE;
-//				pMin2sec_clock->state = CLOCK_RUNNING;
-//			}
-//			else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1)) pStopwatch->state = STOPWATCH_PAUSED;
-			break;
-		case STOPWATCH_PAUSED:
-			// Switch to Min2Sec_Clock
-			if(get_button(BUTTON0_GPIO_Port,BUTTON0_Pin,BUTTON0)) {
+			if(get_button(BUTTON0_GPIO_Port, BUTTON0_Pin, BUTTON0) == BUTTON_PRESS) {
 				pStopwatch->state = STOPWATCH_IDLE;
 				pMin2sec_clock->state = CLOCK_RUNNING;
 			}
-			else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1)) pStopwatch->state = STOPWATCH_RUNNING;
-			else if(get_button(BUTTON2_GPIO_Port,BUTTON2_Pin,BUTTON2)) {
+			else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1) == BUTTON_PRESS)
+				pStopwatch->state = STOPWATCH_PAUSED;
+			break;
+		case STOPWATCH_PAUSED:
+			// Switch to Min2Sec_Clock
+			if(get_button(BUTTON0_GPIO_Port, BUTTON0_Pin, BUTTON0) == BUTTON_PRESS) {
 				pStopwatch->state = STOPWATCH_IDLE;
-				pMin2sec_clock->state = CLOCK_IDLE;
+				pMin2sec_clock->state = CLOCK_RUNNING;
+			}
+			else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1) == BUTTON_PRESS)
+				pStopwatch->state = STOPWATCH_RUNNING;
+			else if(get_button(BUTTON2_GPIO_Port,BUTTON2_Pin,BUTTON2) == BUTTON_PRESS) {
+				pStopwatch->state = STOPWATCH_IDLE;
+				pMin2sec_clock->state = CLOCK_RUNNING;
 			};
 			break;
 		}
-//	}
+	}
+	return;
+}
 
+void min2sec_clock_state_chk(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock)
+{
+	if(pMin2sec_clock->state != CLOCK_IDLE && pStopwatch->state == STOPWATCH_IDLE){
+	switch (pMin2sec_clock->state){
+		case CLOCK_RUNNING:
+			if(get_button(BUTTON0_GPIO_Port, BUTTON0_Pin, BUTTON0) == BUTTON_PRESS) {
+				pStopwatch->state = STOPWATCH_RUNNING; // go to stopwatch mode
+				pMin2sec_clock->state = CLOCK_IDLE;
+			}
+			// change second
+			else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1) == BUTTON_PRESS) {
+				pMin2sec_clock->state = CHANGE_SEC;
+			}
+			break;
+		case CHANGE_SEC:
+			if(get_button(BUTTON0_GPIO_Port, BUTTON0_Pin, BUTTON0) == BUTTON_PRESS) {
+				// Back to CLOCK_RUNNING
+				pMin2sec_clock->state = CLOCK_RUNNING;
+			}else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1) == BUTTON_PRESS){
+				pMin2sec_clock->state = CHANGE_MIN;
+			}
+			break;
+		case CHANGE_MIN:
+			if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1) == BUTTON_PRESS){
+				pMin2sec_clock->state = CHANGE_SEC;
+			}
+			break;
+		}
+	}
+	return;
 }
 
 

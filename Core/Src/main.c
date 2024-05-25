@@ -78,7 +78,7 @@ uint8_t rx_data;
 Stopwatch stopwatch = {0,0,STOPWATCH_IDLE};
 Stopwatch* main_stopwatch_ptr = &stopwatch;
 
-Min2Sec_Clock min2sec_clock = {0,0,CLOCK_IDLE};
+Min2Sec_Clock min2sec_clock = {0,0,CLOCK_RUNNING};
 Min2Sec_Clock* main_min2secClock_ptr = &min2sec_clock;
 
 volatile int TIM2_1ms_counter=0;
@@ -589,8 +589,9 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)  // while(1)
   {
-	// state should be detected.
+	// state detected.
 	  stop_watch_state_chk(&stopwatch,&min2sec_clock);
+	  min2sec_clock_state_chk(&stopwatch,&min2sec_clock);
     osDelay(1);
   }
   /* USER CODE END 5 */

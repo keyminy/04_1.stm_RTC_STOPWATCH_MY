@@ -1,5 +1,6 @@
 #include "main.h" // GPIO/HAL정보
 #include "def.h"
+#include "button.h"
 #include <string.h> // for strncpy etc
 #include <stdlib.h> // atoi itoa
 
@@ -39,18 +40,56 @@ void get_rtc_date_time(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock){
 	static RTC_TimeTypeDef oldTime; // 자동으로 0으로 들어감
 	char lcdbuff[40];
 
-	HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
-	HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BCD);
-	if(oldTime.Seconds != sTime.Seconds){
-		// 현재 update된 정보를 출력한다.(1초에 1번씩 출력)
-		// YYYY-MM-DD HH:mm:ss
-		printf("%02d-%02d %02d:%02d:%02d\n"
-				,bcd2dec(sDate.Month)
-				,bcd2dec(sDate.Date)
-				,bcd2dec(sTime.Hours)
-				,bcd2dec(sTime.Minutes)
-				,bcd2dec(sTime.Seconds)
-		);
+	// =============================================
+	/* clock mode */
+	// =============================================
+	if(pMin2sec_clock->state==CLOCK_RUNNING)
+	{
+		HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
+		HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BCD);
+		if(oldTime.Seconds != sTime.Seconds){
+			// 현재 update된 정보를 출력한다.(1초에 1번씩 출력)
+			// YYYY-MM-DD HH:mm:ss
+			printf("%02d-%02d %02d:%02d:%02d\n"
+					,bcd2dec(sDate.Month)
+					,bcd2dec(sDate.Date)
+					,bcd2dec(sTime.Hours)
+					,bcd2dec(sTime.Minutes)
+					,bcd2dec(sTime.Seconds)
+			);
+			/* 분초 시계 */
+			sprintf(lcdbuff,"%02d-%02d %02d:%02d:%02d"
+					,bcd2dec(sDate.Month)
+					,bcd2dec(sDate.Date)
+					,bcd2dec(sTime.Hours)
+					,bcd2dec(sTime.Minutes)
+					,bcd2dec(sTime.Seconds)
+			); // LCD에서 '\n'은 못알아먹는다.
+			move_cursor(0, 0); //0row,0column으로 커서 이동
+			lcd_string(lcdbuff); // '\0'를 만날때까지 찍는다
+		}
+	}
+	else if
+	(
+		pMin2sec_clock->state==CHANGE_SEC
+		|| pMin2sec_clock->state==CHANGE_MIN
+	)
+	{
+		// If clock is changing seconds or minutes
+		switch (pMin2sec_clock->state){
+			case CHANGE_SEC:
+				if(get_button(BUTTON2_GPIO_Port,BUTTON2_Pin,BUTTON2) == BUTTON_PRESS){
+					sTime.Seconds = dec2bcd((bcd2dec(sTime.Seconds) + 1));
+				}
+				break;
+			case CHANGE_MIN:
+				if(get_button(BUTTON2_GPIO_Port,BUTTON2_Pin,BUTTON2) == BUTTON_PRESS){
+					sTime.Minutes = dec2bcd((bcd2dec(sTime.Minutes) + 1));
+				}
+				break;
+		}
+		// RTC에 적용
+		HAL_RTC_SetTime(&hrtc, &sTime, RTC_FORMAT_BCD);
 		/* 분초 시계 */
 		sprintf(lcdbuff,"%02d-%02d %02d:%02d:%02d"
 				,bcd2dec(sDate.Month)
@@ -61,35 +100,34 @@ void get_rtc_date_time(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock){
 		); // LCD에서 '\n'은 못알아먹는다.
 		move_cursor(0, 0); //0row,0column으로 커서 이동
 		lcd_string(lcdbuff); // '\0'를 만날때까지 찍는다
-		/* stopwatch */
-		if(pStopwatch->state == STOPWATCH_RUNNING){
-			printf("Stop watch running, %02d-%02d %02d\n"
-					,pStopwatch->sec_count/3600%12
-					,pStopwatch->sec_count/60%60
-					,pStopwatch->sec_count%60
-			);
-			sprintf(lcdbuff,"%02d:%02d:%02d"
-					,pStopwatch->sec_count/3600%12
-					,pStopwatch->sec_count/60%60
-					,pStopwatch->sec_count%60
-			);
-		}else{
-			// STOPWATCH_IDLE
-			printf("Didn't Stop watch running, %02d-%02d %02d\n"
-					,pStopwatch->sec_count/3600%12
-					,pStopwatch->sec_count/60%60
-					,pStopwatch->sec_count%60
-			);
-			sprintf(lcdbuff,"%02d:%02d:%02d"
-					,pStopwatch->sec_count/3600%12
-					,pStopwatch->sec_count/60%60
-					,pStopwatch->sec_count%60
-			);
-		}
+	}
+
+	// =============================================
+	/* stopwatch */
+	// =============================================
+	if(pStopwatch->state == STOPWATCH_RUNNING || pStopwatch->state == STOPWATCH_PAUSED){
+		printf("Stop watch running, %02d-%02d %02d\n"
+				,pStopwatch->sec_count/60%60
+				,pStopwatch->sec_count%60
+				,pStopwatch->ms_count/10%100
+		);
+		sprintf(lcdbuff,"%02d:%02d:%02d"
+				,pStopwatch->sec_count/60%60
+				,pStopwatch->sec_count%60
+				,pStopwatch->ms_count/10%100
+		);
 		move_cursor(1, 0); //0row,0column으로 커서 이동
 		lcd_string(lcdbuff); // '\0'를 만날때까지 찍는다
-		oldTime.Seconds = sTime.Seconds;
+	}else if(pStopwatch->state == STOPWATCH_IDLE){
+		sprintf(lcdbuff,"%02d:%02d:%02d"
+				,0
+				,0
+				,0
+		);
+		move_cursor(1, 0); //0row,0column으로 커서 이동
+		lcd_string(lcdbuff); // '\0'를 만날때까지 찍는다
 	}
+	oldTime.Seconds = sTime.Seconds;
 }
 
 // 10진수를 BCD Format으로 변환
