@@ -39,13 +39,10 @@ void stop_watch_state_chk(Stopwatch* pStopwatch, Min2Sec_Clock* pMin2sec_clock)
 			break;
 		case STOPWATCH_RUNNING:
 			// display stopwatch
-				//flower_on();
-
-//			led_all_on();
 			// Switch to Min2Sec_Clock
 //			if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1)) {
 //				pStopwatch->state = STOPWATCH_IDLE;
-//				//pMin2sec_clock->state = CLOCK_RUNNING;
+//				pMin2sec_clock->state = CLOCK_RUNNING;
 //			}
 //			else if(get_button(BUTTON1_GPIO_Port,BUTTON1_Pin,BUTTON1)) pStopwatch->state = STOPWATCH_PAUSED;
 			break;

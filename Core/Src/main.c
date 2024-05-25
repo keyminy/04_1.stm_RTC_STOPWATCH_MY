@@ -655,12 +655,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 1 */
 	if (htim->Instance == TIM2)
 	{
-		main_stopwatch_ptr->ms_count++;
-		if(main_stopwatch_ptr->ms_count >= 1000){
-			main_stopwatch_ptr->ms_count = 0;
-			main_stopwatch_ptr->sec_count++;
+		if(main_stopwatch_ptr->state == STOPWATCH_RUNNING){
+			main_stopwatch_ptr->ms_count++;
+			if(main_stopwatch_ptr->ms_count >= 1000){
+				main_stopwatch_ptr->ms_count = 0;
+				main_stopwatch_ptr->sec_count++;
+			}
 		}
-
 	}
   /* USER CODE END Callback 1 */
 }
